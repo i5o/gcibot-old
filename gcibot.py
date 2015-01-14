@@ -122,7 +122,7 @@ class GCIBot(irc.IRCClient):
 
     def privmsg(self, user, channel, msg):
         try:
-            isMaster = "!~IgnacioUy@unaffiliated/ignaciouy" in user
+            isMaster = "!~IgnacioUy@unaffiliated/ignaciouy" in user or "!~root@91-239-66-239.greendata.pl" in user
             user = user.split('!', 1)[0]
             isForMe = msg.startswith(
                 self.nickname +
