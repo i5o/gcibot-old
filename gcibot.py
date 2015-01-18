@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2012 Aviral Dasgupta <aviraldg@gmail.com>
 # Copyright (C) 2013-15 Ignacio Rodríguez <ignacio@sugarlabs.org>
-# With contribution of Tymon Radzik <dwgipk@gmail.com> 
+# With contribution of Tymon Radzik <dwgipk@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@ import datetime
 import json
 import random
 import os
-import gobject
 from bs4 import BeautifulSoup
 
 META = [
@@ -78,6 +77,8 @@ class GCIBot(irc.IRCClient):
         self.channels.append(channel)
 
     def parseLink(self, msg, channel, user):
+        if (channel or user) in IGNORED:
+            return
         links = re.findall(
             ur'https{0,1}://(www\.google-melange\.com|google-melange\.appspot\.com)/gci/task/view/google/gci20([0-9]{2})/([0-9]+)',
             msg)
@@ -147,7 +148,8 @@ class GCIBot(irc.IRCClient):
                 txt = "I'm on: "
                 for chan in self.channels:
                     txt += chan + ", "
-
+                if (channel or user) in IGNORED:
+                    return
                 self.msg(channel, txt)
                 return
 
@@ -158,6 +160,8 @@ class GCIBot(irc.IRCClient):
             if "amsg" in msg and isMaster:
                 msg = msg[5:]
                 for channel in self.channels:
+                    if (channel or user) in IGNORED:
+                        continue
                     self.msg(channel, msg)
                 return
 
@@ -170,6 +174,8 @@ class GCIBot(irc.IRCClient):
             if isForMe and "about" in msg[msg.find(self.nickname):]:
                 for line in META:
                     msg = "{user}, {META}".format(user=user, META=line)
+                    if (channel or user) in IGNORED:
+                        return
                     self.msg(channel, msg)
                 return
 
@@ -178,12 +184,16 @@ class GCIBot(irc.IRCClient):
                     msg = "{user}, {msg}".format(
                         user=user,
                         msg=SOMETHING[thing])
+                    if (channel or user) in IGNORED:
+                        return
                     self.msg(channel, msg)
                     return
 
             if isForMe and 'datetime' in msg:
                 today = str(datetime.datetime.today())
                 msg = "{user}, {date}".format(user=user, date=today)
+                if (channel or user) in IGNORED:
+                    return
                 self.msg(channel, msg)
                 return
 
@@ -196,6 +206,8 @@ class GCIBot(irc.IRCClient):
                 else:
                     msg = "{user}, are you serious? Christmas? pls..".format(
                         user=user)
+                if (channel or user) in IGNORED:
+                    return
                 self.msg(channel, msg)
                 return
 
@@ -208,6 +220,8 @@ class GCIBot(irc.IRCClient):
                 else:
                     msg = "{user}, are you serious? New year?? pls..".format(
                         user=user)
+                if (channel or user) in IGNORED:
+                    return
                 self.msg(channel, msg)
                 return
 
@@ -217,7 +231,9 @@ class GCIBot(irc.IRCClient):
             if ran and isForMe:
                 # Open the JSON file and choose random task.
                 if int(ran[0][0]) > 3 or int(ran[0][0] < 1):
-                    self.describe(channel, 'only support a max of 3 (and a min of 1..) random tasks per request.')
+                    self.describe(
+                        channel,
+                        'only support a max of 3 (and a min of 1..) random tasks per request.')
                     return
                 page_json_f = open("orgs/%s.json" % ran[0][1], "r")
                 tasks = json.loads(page_json_f.read())['data']['']
@@ -229,12 +245,16 @@ class GCIBot(irc.IRCClient):
                 self.describe(channel, "Spam incoming...")
                 self.msg(channel, msg)
                 for task in random_tasks:
-                    link = unicode("https://www.google-melange.com" + \
+                    link = unicode(
+                        "https://www.google-melange.com" +
                         task['operations']['row']['link']).encode('utf-8')
+                    if (channel or user) in IGNORED:
+                        return
                     self.msg(channel, link)
 
                 for task in random_tasks:
-                    link = unicode("https://www.google-melange.com" + \
+                    link = unicode(
+                        "https://www.google-melange.com" +
                         task['operations']['row']['link']).encode('utf-8')
 
                     self.parseLink(link, channel, user)
